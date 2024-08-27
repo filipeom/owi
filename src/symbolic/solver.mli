@@ -13,3 +13,5 @@ val model :
   -> symbols:Smtml.Symbol.t list option
   -> pc:Smtml.Expr.t list
   -> Smtml.Model.t
+
+val get_statistics : t -> Smtml.Statistics.t

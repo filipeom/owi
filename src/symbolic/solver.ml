@@ -27,3 +27,7 @@ let model (S (solver_module, s)) ~symbols ~pc =
     | Some model -> model
   end
   | `Unsat | `Unknown -> assert false
+
+let get_statistics (S (solver_module, s)) =
+  let module Solver = (val solver_module) in
+  Solver.get_statistics s
