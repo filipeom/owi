@@ -21,11 +21,6 @@ let dir_file =
   let parse s = `Ok (Fpath.v s) in
   (parse, Fpath.pp)
 
-let solver_conv =
-  Arg.conv
-    ( Smtml.Solver_dispatcher.solver_type_of_string
-    , Smtml.Solver_dispatcher.pp_solver_type )
-
 (* Common options *)
 
 let copts_t = Term.(const [])
@@ -110,7 +105,7 @@ let solver =
   let doc = "SMT solver to use" in
   Arg.(
     value
-    & opt solver_conv Smtml.Solver_dispatcher.Z3_solver
+    & opt Smtml.Solver_type.conv Smtml.Solver_type.Z3_solver
     & info [ "solver"; "s" ] ~doc )
 
 let unsafe =
