@@ -34,17 +34,24 @@ let from_file file =
     | Some f -> Ok f
   in
 
-  let parse_time t1 t2 t3 =
-    let* clock = parse_float t1 in
-    let* utime = parse_float t2 in
-    let+ stime = parse_float t3 in
-    { Rusage.clock; utime; stime }
-  in
-
   let parse_int s =
     match int_of_string_opt s with
     | None -> ksprintf error "malformed int %S" s
     | Some i -> Ok i
+  in
+
+  let parse_int64 s =
+    match Int64.of_string_opt s with
+    | None -> ksprintf error "malformed int64"
+    | Some i -> Ok i
+  in
+
+  let parse_rusage t1 t2 t3 maxrss =
+    let* clock = parse_float t1 in
+    let* utime = parse_float t2 in
+    let* stime = parse_float t3 in
+    let+ maxrss = parse_int64 maxrss in
+    { Rusage.clock; utime; stime; maxrss }
   in
 
   let rm_empty_str l = List.filter (fun s -> s <> "") l in
@@ -62,25 +69,25 @@ let from_file file =
     in
     let+ res =
       match String.split_on_char ' ' result |> rm_empty_str with
-      | [ "Reached"; "in"; t1; t2; t3 ] ->
-        let+ rusage = parse_time t1 t2 t3 in
+      | [ "Reached"; "in"; t1; t2; t3; "using"; maxrss ] ->
+        let+ rusage = parse_rusage t1 t2 t3 maxrss in
         Run_result.Reached rusage
-      | [ "Timeout"; "in"; t1; t2; t3 ] ->
-        let+ rusage = parse_time t1 t2 t3 in
+      | [ "Timeout"; "in"; t1; t2; t3; "using"; maxrss ] ->
+        let+ rusage = parse_rusage t1 t2 t3 maxrss in
         Run_result.Timeout rusage
-      | [ "Other"; n; "in"; t1; t2; t3 ] ->
+      | [ "Other"; n; "in"; t1; t2; t3; "using"; maxrss ] ->
         let* n = parse_int n in
-        let+ rusage = parse_time t1 t2 t3 in
+        let+ rusage = parse_rusage t1 t2 t3 maxrss in
         Run_result.Other (rusage, n)
-      | [ "Nothing"; "in"; t1; t2; t3 ] ->
-        let+ rusage = parse_time t1 t2 t3 in
+      | [ "Nothing"; "in"; t1; t2; t3; "using"; maxrss ] ->
+        let+ rusage = parse_rusage t1 t2 t3 maxrss in
         Run_result.Nothing rusage
-      | [ "Signaled"; n; "in"; t1; t2; t3 ] ->
-        let* rusage = parse_time t1 t2 t3 in
+      | [ "Signaled"; n; "in"; t1; t2; t3; "using"; maxrss ] ->
+        let* rusage = parse_rusage t1 t2 t3 maxrss in
         let+ n = parse_int n in
         Run_result.Stopped (rusage, n)
-      | [ "Stopped"; n; "in"; t1; t2; t3 ] ->
-        let* rusage = parse_time t1 t2 t3 in
+      | [ "Stopped"; n; "in"; t1; t2; t3; "using"; maxrss ] ->
+        let* rusage = parse_rusage t1 t2 t3 maxrss in
         let+ n = parse_int n in
         Run_result.Signaled (rusage, n)
       | _ -> ksprintf error "malformed result: %S" result

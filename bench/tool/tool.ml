@@ -46,7 +46,7 @@ let wait_pid =
     Sys.set_signal Sys.sigchld Signal_default;
     let waited_pid, status = Unix.waitpid [] (-pid) in
     let end_time = Unix.gettimeofday () in
-    let { Rusage.utime; stime; _ } = Rusage.get Rusage.Children in
+    let { Rusage.utime; stime; maxrss; _ } = Rusage.get Rusage.Children in
     assert (waited_pid = pid);
 
     let utime_diff = utime -. !last_utime in
@@ -59,7 +59,7 @@ let wait_pid =
 
     (* Sometimes the clock goes a little bit above the allowed timeout... *)
     let clock = min clock timeout in
-    let rusage = { Report.Rusage.clock; utime; stime } in
+    let rusage = { Report.Rusage.clock; utime; stime; maxrss } in
 
     if !did_timeout || Float.equal clock timeout then
       Report.Run_result.Timeout rusage
